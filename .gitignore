@@ -1,194 +1,356 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+opcao = 0
 
-# C extensions
-*.so
+usuarios = []
+viagens = []
+reservas = []
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+def cadastrar_usuario():
+    nome = input("Digite seu nome: ")
+    email = input("Digite seu email: ")
+    senha = input("Digite sua senha: ")
+    confSenha = input("Digite sua senha novamente: ")
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+    emailExiste = False
+    for usu in usuarios:
+        if email == usu["email"]:
+            print('Email já existe!')
+            emailExiste = True
+            break
+    if emailExiste:
+        return
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+    if '@' in email and '.' in email:
+        if senha == confSenha:
+            if 7 <= len(senha) <= 20:
+                print('Usuário cadastrado com sucesso')
+                usuario = {
+                    'nome': nome,
+                    'email': email,
+                    'senha': senha,
+                }
+                usuarios.append(usuario)
+            else:
+                print('Senha precisa ter entre 7 e 20 caracteres')
+        else:
+            print("As senhas não conferem")
+    else:
+        print('Email inválido!')
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
+def listar_usuarios():
+    for usu in usuarios:
+        print(f"Nome: {usu['nome']}")
+        print(f"Email: {usu['email']}")
+        print('')
 
-# Translations
-*.mo
-*.pot
+def login():
+    email = input('Digite seu email: ')
+    senha = input('Digite sua senha: ')
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+    logado = False
+    for usu in usuarios:
+        if usu['email'] == email and usu['senha'] == senha:
+            print(f"Login realizado com sucesso! Bem-vindo, {usu['nome']}.")
+            logado = True
+            return usu
+    if not logado:
+        print("Email ou senha incorretos.")
+        return None
 
-# Flask stuff:
-instance/
-.webassets-cache
+def cadastrar_viagem(usuario_logado):
+    origem = input('Digite a origem: ')
+    destino = input('Digite o destino: ')
+    vagas = input('Digite o número de vagas: ')
+    data = input('Digite a data (formato DD/MM/AA): ')
+    hora = input('Digite a hora (formato HH:MM): ')
+    valor = input('Digite o valor por vaga: ')
+    viagem = {
+        'motorista': usuario_logado['nome'],
+        'motorista_email': usuario_logado['email'],
+        'origem': origem,
+        'destino': destino,
+        'vagas': int(vagas),
+        'data': data,
+        'hora': hora,
+        'valor': float(valor)
+    }
+    viagens.append(viagem)
+    print("Viagem cadastrada com sucesso!")
 
-# Scrapy stuff:
-.scrapy
+def listar_carona_disponiveis():
+    if len(viagens) == 0:
+        print("Nenhuma carona disponível.")
+        return
+    for via in viagens:
+        if via['vagas'] > 0:
+            print("Motorista:", via['motorista'])
+            print("Email do motorista:", via['motorista_email'])
+            print("Origem:", via['origem'])
+            print("Destino:", via['destino'])
+            print("Data:", via['data'])
+            print("Hora:", via['hora'])
+            print("Vagas disponíveis:", via['vagas'])
+            print("Valor por vaga: R$", via['valor'])
+            print('-' * 40)
 
-# Sphinx documentation
-docs/_build/
+def buscar_carona_por_origem_destino():
+    origem = input("Digite a origem: ")
+    destino = input("Digite o destino: ")
+    encontrou = False
+    for via in viagens:
+        if via['origem'].lower() == origem.lower() and via['destino'].lower() == destino.lower() and via['vagas'] > 0:
+            encontrou = True
+            print("Motorista:", via['motorista'])
+            print("Email do motorista:", via['motorista_email'])
+            print("Origem:", via['origem'])
+            print("Destino:", via['destino'])
+            print("Data:", via['data'])
+            print("Hora:", via['hora'])
+            print("Vagas disponíveis:", via['vagas'])
+            print("Valor por vaga: R$", via['valor'])
+            print('-' * 40)
+    if not encontrou:
+        print("Nenhuma carona encontrada com esses critérios.")
 
-# PyBuilder
-.pybuilder/
-target/
+def reservar_vaga(usuario_logado):
+    email_motorista = input("Digite o email do motorista da carona que deseja reservar: ")
+    data_carona = input("Digite a data da carona (formato DD/MM/AA): ")
+    quantidade = int(input("Quantas vagas deseja reservar? "))
 
-# Jupyter Notebook
-.ipynb_checkpoints
+    viagem_encontrada = None
+    for via in viagens:
+        if via['motorista_email'] == email_motorista and via['data'] == data_carona:
+            viagem_encontrada = via
+            break
 
-# IPython
-profile_default/
-ipython_config.py
+    if viagem_encontrada is None:
+        print("Carona não encontrada com esses dados.")
+        return
 
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
+    if viagem_encontrada['vagas'] >= quantidade and quantidade > 0:
+        viagem_encontrada['vagas'] -= quantidade
+        reservas.append({
+            'usuario': usuario_logado['nome'],
+            'motorista_email': email_motorista,
+            'data': data_carona,
+            'vagas_reservadas': quantidade
+        })
+        print(f"Reserva realizada com sucesso! Vagas restantes: {viagem_encontrada['vagas']}")
+        print("O pagamento deve ser feito diretamente ao motorista no momento da entrega.")
+        print("\n--- Detalhes da sua reserva ---")
+        print("Motorista:", viagem_encontrada['motorista'])
+        print("Email do motorista:", viagem_encontrada['motorista_email'])
+        print("Origem:", viagem_encontrada['origem'])
+        print("Destino:", viagem_encontrada['destino'])
+        print("Data:", viagem_encontrada['data'])
+        print("Hora:", viagem_encontrada['hora'])
+        print("Valor por vaga: R$", viagem_encontrada['valor'])
+        print("Vagas reservadas:", quantidade)
+        print("-----------------------------------\n")
+    else:
+        print("Não há vagas suficientes ou quantidade inválida.")
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
+def cancelar_reserva(usuario_logado):
+    email_motorista = input("Digite o email do motorista da carona que deseja cancelar reserva: ")
+    data_carona = input("Digite a data da carona (formato DD/MM/AA): ")
 
-# UV
-#   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#uv.lock
+    reserva_encontrada = None
+    for reserva in reservas:
+        if reserva['usuario'] == usuario_logado['nome'] and reserva['motorista_email'] == email_motorista and reserva['data'] == data_carona:
+            reserva_encontrada = reserva
+            break
 
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock
+    if reserva_encontrada is None:
+        print("Você não tem reserva para essa carona.")
+        return
 
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
-#   in version control.
-#   https://pdm.fming.dev/latest/usage/project/#working-with-version-control
-.pdm.toml
-.pdm-python
-.pdm-build/
+    for via in viagens:
+        if via['motorista_email'] == email_motorista and via['data'] == data_carona:
+            via['vagas'] += reserva_encontrada['vagas_reservadas']
+            print(f"Cancelamento realizado com sucesso! {reserva_encontrada['vagas_reservadas']} vaga(s) devolvida(s).")
+            print(f"Vagas disponíveis agora: {via['vagas']}")
+            reservas.remove(reserva_encontrada)
+            break
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
+def remover_carona(usuario_logado):
+    data_carona = input("Digite a data da carona que deseja remover (formato DD/MM/AA): ")
+    carona_encontrada = None
+    for via in viagens:
+        if via['motorista_email'] == usuario_logado['email'] and via['data'] == data_carona:
+            carona_encontrada = via
+            break
+    if carona_encontrada is None:
+        print("Você não tem uma carona cadastrada nessa data.")
+        return
+    viagens.remove(carona_encontrada)
+    print("Carona removida com sucesso!")
 
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
+def mostrar_detalhes_carona():
+    email_motorista = input("Digite o email do motorista da carona: ")
+    data_carona = input("Digite a data da carona (formato DD/MM/AA): ")
+    carona_encontrada = None
+    for via in viagens:
+        if via['motorista_email'] == email_motorista and via['data'] == data_carona:
+            carona_encontrada = via
+            break
+    if carona_encontrada is None:
+        print("Carona não encontrada.")
+        return
+    print("Detalhes da Carona:")
+    print("Motorista:", carona_encontrada['motorista'])
+    print("Email do motorista:", carona_encontrada['motorista_email'])
+    print("Origem:", carona_encontrada['origem'])
+    print("Destino:", carona_encontrada['destino'])
+    print("Data:", carona_encontrada['data'])
+    print("Hora:", carona_encontrada['hora'])
+    print("Valor por vaga: R$", carona_encontrada['valor'])
+    print("Vagas restantes:", carona_encontrada['vagas'])
 
-# SageMath parsed files
-*.sage.py
+def mostrar_carona_usuario(usuario_logado):
+    tem_carona = False
+    for via in viagens:
+        if via['motorista_email'] == usuario_logado['email']:
+            tem_carona = True
+            print("Origem:", via['origem'])
+            print("Destino:", via['destino'])
+            print("Data:", via['data'])
+            print("Hora:", via['hora'])
+            print("Valor por vaga: R$", via['valor'])
+            print("Vagas restantes:", via['vagas'])
+            print('-' * 30)
+    if not tem_carona:
+        print("Você não tem caronas cadastradas.")
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+def logout():
+    print("Logout realizado com sucesso.")
 
-# Spyder project settings
-.spyderproject
-.spyproject
+def relatorio_totalizadores(usuario_logado):
+    caronas_motorista = []
+    for via in viagens:
+        if via['motorista_email'] == usuario_logado['email']:
+            caronas_motorista.append(via)
 
-# Rope project settings
-.ropeproject
+    if len(caronas_motorista) == 0:
+        print("Não há caronas cadastradas.")
+        return
 
-# mkdocs documentation
-/site
+    total_geral = 0
+    linhas = []
+    for via in caronas_motorista:
+        vagas_ocupadas = 0
+        for res in reservas:
+            if res['motorista_email'] == via['motorista_email'] and res['data'] == via['data']:
+                vagas_ocupadas += res['vagas_reservadas']
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+        total = via['valor'] * vagas_ocupadas
+        total_geral += total
+        linha = (
+            f"Origem: {via['origem']}\n"
+            f"Destino: {via['destino']}\n"
+            f"Data/Horário: {via['data']} {via['hora']}\n"
+            f"Valor por vaga: R$ {via['valor']}\n"
+            f"Vagas restantes: {via['vagas']}\n"
+            f"Total (valor * vagas ocupadas): R$ {total}\n"
+            "----------------------------"
+        )
+        print(linha)
+        linhas.append(linha)
 
-# Pyre type checker
-.pyre/
+    print(f"Total geral de todas as caronas: R$ {total_geral}")
 
-# pytype static type analyzer
-.pytype/
+    salvar = input("Deseja salvar esse relatório em arquivo? (sim/não): ")
+    if salvar.lower() == "sim":
+        nome_arquivo = f"relatorio_{usuario_logado['email'].replace('@','_').replace('.','_')}.txt"
+        arquivo = open(nome_arquivo, "w")
+        for linha in linhas:
+            arquivo.write(linha + "\n")
+        arquivo.write(f"Total geral de todas as caronas: R$ {total_geral}\n")
+        arquivo.close()
+        print(f"Relatório salvo no arquivo {nome_arquivo}")
 
-# Cython debug symbols
-cython_debug/
+usuario_logado = None
 
-# PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#  and can be added to the global gitignore or merged into this file.  For a more nuclear
-#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
+while opcao != 4:
+    print('-' * 50)
+    print('''
+          Escolha uma opção:
+          1- Cadastrar
+          2- Login
+          3- Lista usuário
+          4- Sair
+        ''')
+    print('-' * 50)
 
-# Abstra
-# Abstra is an AI-powered process automation framework.
-# Ignore directories containing user credentials, local state, and settings.
-# Learn more at https://abstra.io/docs
-.abstra/
+    try:
+        opcao = int(input("Escolha uma opção: "))
+    except:
+        print("Digite um número válido.")
+        continue
 
-# Visual Studio Code
-#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
-#  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#  and can be added to the global gitignore or merged into this file. However, if you prefer, 
-#  you could uncomment the following to ignore the enitre vscode folder
-# .vscode/
+    if opcao == 4:
+        print("Saiu")
+        break
 
-# Ruff stuff:
-.ruff_cache/
+    elif opcao == 1:
+        cadastrar_usuario()
 
-# PyPI configuration file
-.pypirc
+    elif opcao == 3:
+        listar_usuarios()
 
-# Cursor
-#  Cursor is an AI-powered code editor. `.cursorignore` specifies files/directories to
-#  exclude from AI features like autocomplete and code analysis. Recommended for sensitive data
-#  refer to https://docs.cursor.com/context/ignore-files
-.cursorignore
-.cursorindexingignore
+    elif opcao == 2:
+        usuario_logado = login()
+        if usuario_logado is not None:
+            opcao_menu = 0
+            while opcao_menu != 10:
+                print('''
+                    Menu Usuário:
+                    [1] Cadastrar Carona
+                    [2] Listar todas as caronas disponíveis
+                    [3] Buscar carona por origem e destino
+                    [4] Reservar vaga em carona
+                    [5] Cancelar reserva
+                    [6] Remover carona
+                    [7] Mostrar detalhes de uma carona
+                    [8] Mostrar caronas cadastradas (motorista)
+                    [9] Relatório de totalizadores
+                    [10] Logout
+                ''')
+                try:
+                    opcao_menu = int(input('Escolha uma opção: '))
+                except:
+                    print("Digite um número válido.")
+                    continue
+
+                if opcao_menu == 1:
+                    cadastrar_viagem(usuario_logado)
+
+                elif opcao_menu == 2:
+                    listar_carona_disponiveis()
+
+                elif opcao_menu == 3:
+                    buscar_carona_por_origem_destino()
+
+                elif opcao_menu == 4:
+                    reservar_vaga(usuario_logado)
+
+                elif opcao_menu == 5:
+                    cancelar_reserva(usuario_logado)
+
+                elif opcao_menu == 6:
+                    remover_carona(usuario_logado)
+
+                elif opcao_menu == 7:
+                    mostrar_detalhes_carona()
+
+                elif opcao_menu == 8:
+                    mostrar_carona_usuario(usuario_logado)
+
+                elif opcao_menu == 9:
+                    relatorio_totalizadores(usuario_logado)
+
+                elif opcao_menu == 10:
+                    logout()
+                    usuario_logado = None
+                    break
+
+                else:
+                    print("Opção inválida.")
